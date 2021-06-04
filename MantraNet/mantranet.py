@@ -1,13 +1,11 @@
 import os
 import numpy as np
-from PIL import Image
 import matplotlib.pyplot as plt
-import pytorch_lightning as pl
-# ##Pytorch
+from PIL import Image
+#Pytorch
 import torch
 from torch import nn
 import torch.nn.functional as F
-import cv2
 
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -454,7 +452,7 @@ def batch_norm(X, eps=0.001):
 
 #MantraNet (equivalent from the one coded in tensorflow at https://github.com/ISICV/ManTraNet)
 class MantraNet(nn.Module):
-    def __init__(self, in_channel=3, eps=10 ** (-6)):
+    def __init__(self, in_channel=3, eps=10 ** (-6),device=device):
         super(MantraNet, self).__init__()
 
         self.eps = eps
@@ -600,13 +598,9 @@ class MantraNet(nn.Module):
 
         final_output = self.end(output_lstm)
         
-        if self.final_mask:
+    
 
-            return final_output
-            
-        else:
-            
-            return output_lstm
+        return final_output
             
 
 #Slight modification of the original MantraNet using a GRU instead of a LSTM
@@ -765,13 +759,13 @@ class MantraNet_GRU(nn.Module):
 
 
 ##Use pre-trained weights :
-def pre_trained_model(weight_path='./MantraNetv4.pt'):
-    model=MantraNet()
+def pre_trained_model(weight_path='./MantraNetv4.pt',device=device):
+    model=MantraNet(device=device)
     model.load_state_dict(torch.load(weight_path))
     return model
 
 #predict a forgery mask of an image
-def check_forgery(model,img_path='./example.jpg'):
+def check_forgery(model,img_path='./example.jpg',device=device):
 
     model.to(device)
     model.eval()
