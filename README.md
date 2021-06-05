@@ -23,7 +23,7 @@ ManTraNet is an end-to-end image forgery detection and localization solution, wh
 - **Simplicity**: ManTraNet needs no extra pre- and/or post-processing
 - **Fast**: ManTraNet puts all computations in a single network, and accepts an image of arbitrary size.
 - **Robustness**: ManTraNet does not rely on working assumptions other than the local manipulation assumption, i.e. some region in a testing image is modified differently from the rest.
-- 
+
 
 Technically speaking, ManTraNet is composed of two sub-networks as shown below:
 
@@ -49,7 +49,7 @@ One may simply download the repo and play with the provided ipython notebook.
 ## N.B. :
 - Considering that there is some differences between the implementation of common functions between Tensorflow/Keras and Pytorch, some particular methods of Pytorch (like batch normalization or hardsigmoid) are re-implemented here to match perfectly with the original Tensorflow version
 
-- MantraNet is an architecture difficult to train without GPU/Multi-CPU. Even in "eval" mode, if you want to use it for detecting forgeries in one image it takes some minutes
-using only your CPU.
+- MantraNet is an architecture difficult to train without GPU/Multi-CPU. Even in "eval" mode, if you want to use it for detecting forgeries in one image it may take some minutes
+using only your CPU. It depends on the size of your input image.
 
 - There is also a slightly different version of MantraNet that uses ConvGRU instead of ConvLSTM in the repo. It enables to speed up a bit the training of the MantraNet without losing efficiency.
