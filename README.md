@@ -34,11 +34,12 @@ Technically speaking, ManTraNet is composed of two sub-networks as shown below:
 
 ## Where are the pre-trained weights coming from  ?
 
-- The authors have first pretrained the Image Manipulation Trace Feature Extractor with an homemade database containing 385 types of forgeries. Unfortunately, their database is not shared publicly.
+- The authors have first pretrained the Image Manipulation Trace Feature Extractor with an homemade database containing 385 types of forgeries. Unfortunately, their database is not shared publicly. Then, they trained the ManTraNet with four types of synthetic data, i.e. copy-move, splicing, removal, and enhancement.
 
-- Then, they trained the ManTraNet with four types of synthetic data, i.e. copy-move, splicing, removal, and enhancement
+**_The pre-trained weights available in this repo are the results of these two trainings achieved by the authors_**
 
-The pre-trained weights available in this repo are the results of these two trainings achieved by the authors
+**Remarks** : I provide also a way to train ManTraNet in the demo notebook. Of course, to do it you need your own (relevant) dataset and, certainly play with some hyperparameters like the learning rate (see the details of the `ForgeryDetector` class in `mantranet.py` ).
+
 
 ## Dependency
 - **Pytorch** : 1.8.1
@@ -54,3 +55,15 @@ One may simply download the repo and play with the provided ipython notebook.
 using only your CPU. It depends on the size of your input image.
 
 - There is also a slightly different version of MantraNet that uses ConvGRU instead of ConvLSTM in the repo. It enables to speed up a bit the training of the MantraNet without losing efficiency.
+
+## Citation :
+
+```
+@InProceedings{Wu_2019_CVPR,
+author = {Wu, Yue and AbdAlmageed, Wael and Natarajan, Premkumar},
+title = {ManTra-Net: Manipulation Tracing Network for Detection and Localization of Image Forgeries With Anomalous Features},
+booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+month = {June},
+year = {2019}
+}
+```
