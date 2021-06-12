@@ -42,6 +42,7 @@ The pre-trained weights available in this repo are the results of these two trai
 
 ## Dependency
 - **Pytorch** : 1.8.1
+- **Pytorch-lightning : 1.2.10**
 
 ## Demo
 One may simply download the repo and play with the provided ipython notebook.

@@ -2,10 +2,14 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from collections import OrderedDict
 #Pytorch
 import torch
 from torch import nn
 import torch.nn.functional as F
+
+#pytorch-lightning
+import pytorch_lightning as pl
 
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -530,8 +534,6 @@ class MantraNet(nn.Module):
        
     
     def forward(self, x):
-        
-
         B, nb_channel, H, W = x.shape
 
         # Normalization
@@ -782,10 +784,68 @@ def check_forgery(model,img_path='./example.jpg',device=device):
     with torch.no_grad():
         final_output = model(im)
 
-    plt.subplot(1,2,1)
+    plt.subplot(1,3,1)
     plt.imshow(original_image)
     plt.title('Original image')
 
-    plt.subplot(1,2,2)
+    plt.subplot(1,3,2)
     plt.imshow((final_output[0][0]).cpu().detach(), cmap='gray')
     plt.title('Predicted forgery mask')
+    
+    plt.subplot(1,3,3)
+    plt.imshow((final_output[0][0].unsqueeze(2)>0.2)*torch.tensor(original_image))
+    plt.title('Suspicious regions detected')
+
+class ForgeryDetector(pl.LightningModule):
+    
+    # Model Initialization/Creation    
+    def __init__(self,train_loader,detector=MantraNet(),lr=0.001):
+        super(ForgeryDetector, self).__init__()
+        
+        self.detector=detector
+        self.train_loader=train_loader
+        self.cpt=-1
+        self.lr=lr
+
+    # Forward Pass of Model
+    def forward(self, x):
+        return self.detector(x)
+    
+    # Loss Function
+    def loss(self, y_hat, y):
+        return nn.BCELoss()(y_hat,y)
+
+    # Optimizers
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.detector.parameters(), lr=self.lr)
+        # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+
+        # return the list of optimizers and second empty list is for schedulers (if any)
+        return [optimizer], []
+
+    # Calls after prepare_data for DataLoader
+    def train_dataloader(self):
+
+        return self.train_loader
+
+    
+    # Training Loop
+    def training_step(self, batch, batch_idx):
+        # batch returns x and y tensors
+        real_images, mask = batch
+        B,_,_,_=real_images.size()
+        self.cpt+=1
+
+        predicted=self.detector(real_images).view(B,-1)
+        mask=mask.view(B,-1)
+  
+        loss=self.loss(predicted,mask)
+
+        self.log('BCELoss',loss,on_step=True,on_epoch=True,prog_bar=True)
+
+
+        output = OrderedDict({
+                'loss': loss,
+                 })
+           
+        return output
