@@ -3,7 +3,9 @@
 Who has never met a forged picture on the web ? No one ! Everyday we are constantly facing fake pictures touched up in Photoshop but it is not always easy to detect it.
 
 In this repo, you will find an implementation of ManTraNet, a manipulation tracing network for detection and localization of image forgeries with anomalous features. 
-With this algorithm, you may find if an image has been falsified and even identify suspicious regions.
+With this algorithm, you may find if an image has been falsified and even identify suspicious regions. A little example is displayed below.
+
+![](https://i.imgur.com/OyErscI.png)
 
 It's a faifthful replica of the [official implementation](https://github.com/ISICV/ManTraNet) using however the library Pytorch. To learn more about this network, I suggest you to read the paper that describes it [here](https://openaccess.thecvf.com/content_CVPR_2019/papers/Wu_ManTra-Net_Manipulation_Tracing_Network_for_Detection_and_Localization_of_Image_CVPR_2019_paper.pdf).
 
@@ -14,6 +16,8 @@ There is a slight discrepancy between the architecture depicted in the paper com
 ![](https://i.imgur.com/htcP41B.png)
 
 Please note that the rest of the README is largely inspired by the original repo.
+
+
 
 --- 
 ## What is ManTraNet ?
