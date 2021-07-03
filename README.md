@@ -13,7 +13,7 @@ On top of the MantraNet, there is also a file containing pre-trained weights obt
 
 There is a slight discrepancy between the architecture depicted in the paper compared to the real one implemented and shared on the official repo. I put below the real architecture which is implemented here.
 
-![](https://i.imgur.com/htcP41B.png)
+![](https://i.imgur.com/FUcFR94.png)
 
 Please note that the rest of the README is largely inspired by the original repo.
 
