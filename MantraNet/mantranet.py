@@ -471,6 +471,11 @@ class MantraNet(nn.Module):
         self.init_conv = nn.Conv2d(in_channel, 4, 5, 1, padding=0, bias=False)
 
         self.BayarConv2D = nn.Conv2d(in_channel, 3, 5, 1, padding=0, bias=False)
+        self.bayar_mask = (torch.tensor(np.ones(shape=(5, 5)))).to(self.device)
+        self.bayar_mask[2, 2] = 0
+
+        self.bayar_final = (torch.tensor(np.zeros((5, 5)))).to(self.device)
+        self.bayar_final[2, 2] = -1
 
         self.SRMConv2D = nn.Conv2d(in_channel, 9, 5, 1, padding=0, bias=False)
         self.SRMConv2D.weight.data=torch.load('MantraNetv4.pt')['SRMConv2D.weight']
@@ -525,15 +530,6 @@ class MantraNet(nn.Module):
 
         self.end = nn.Sequential(nn.Conv2d(8, 1, 7, 1, padding=3),nn.Sigmoid())
         
-        
-        self.bayar_mask = (torch.tensor(np.ones(shape=(5, 5)))).to(self.device)
-        self.bayar_mask[2, 2] = 0
-
-        self.bayar_final = (torch.tensor(np.zeros((5, 5)))).to(self.device)
-        self.bayar_final[2, 2] = -1
-        
-        
-    
     def forward(self, x):
         B, nb_channel, H, W = x.shape
         
@@ -698,7 +694,6 @@ class MantraNet_GRU(nn.Module):
         # Normalization
         x = x / 255. * 2 - 1
 
-        
         ## Image Manipulation Trace Feature Extractor
 
         ## **Bayar constraints**
