@@ -461,6 +461,7 @@ class MantraNet(nn.Module):
 
         self.eps = eps
         self.relu = nn.ReLU()
+        self.device=device
 
 
         # ********** IMAGE MANIPULATION TRACE FEATURE EXTRACTOR *********
@@ -525,21 +526,25 @@ class MantraNet(nn.Module):
         self.end = nn.Sequential(nn.Conv2d(8, 1, 7, 1, padding=3),nn.Sigmoid())
         
         
-        self.bayar_mask = (torch.tensor(np.ones(shape=(5, 5)))).to(device)
+        self.bayar_mask = (torch.tensor(np.ones(shape=(5, 5)))).to(self.device)
         self.bayar_mask[2, 2] = 0
 
-        self.bayar_final = (torch.tensor(np.zeros((5, 5)))).to(device)
+        self.bayar_final = (torch.tensor(np.zeros((5, 5)))).to(self.device)
         self.bayar_final[2, 2] = -1
         
-       
+        
     
     def forward(self, x):
         B, nb_channel, H, W = x.shape
+        
+        if not(self.training):
+            self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
+        else:
+            if not hasattr(self, 'GlobalPool'):
+                self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
 
         # Normalization
         x = x / 255. * 2 - 1
-
-        self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
 
         ## Image Manipulation Trace Feature Extractor
 
@@ -600,14 +605,13 @@ class MantraNet(nn.Module):
 
         final_output = self.end(output_lstm)
         
-    
 
         return final_output
             
 
 #Slight modification of the original MantraNet using a GRU instead of a LSTM
 class MantraNet_GRU(nn.Module):
-    def __init__(self,device, in_channel=3, eps=10 **(-4)):
+    def __init__(self,device,in_channel=3,eps=10 **(-4)):
         super(MantraNet_GRU, self).__init__()
 
         self.eps = eps
@@ -682,22 +686,22 @@ class MantraNet_GRU(nn.Module):
         self.bayar_mask = torch.ones((5, 5),device=self.device)
         self.bayar_final = torch.zeros((5, 5),device=self.device)
         
-        
-        
-        # torch.cuda.amp.autocast(enabled=True)
-
     def forward(self, x):
         B, nb_channel, H, W = x.shape
+        
+        if not(self.training):
+            self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
+        else:
+            if not hasattr(self, 'GlobalPool'):
+                self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
 
         # Normalization
         x = x / 255. * 2 - 1
 
-        self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
-
+        
         ## Image Manipulation Trace Feature Extractor
 
         ## **Bayar constraints**
-
 
         self.bayar_mask[2, 2] = 0
         self.bayar_final[2, 2] = -1
@@ -806,7 +810,7 @@ class ForgeryDetector(pl.LightningModule):
         self.train_loader=train_loader
         self.cpt=-1
         self.lr=lr
-
+        
     # Forward Pass of Model
     def forward(self, x):
         return self.detector(x)
