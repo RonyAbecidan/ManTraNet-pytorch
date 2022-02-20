@@ -1,4 +1,4 @@
-import os
+from cv2 import detail_ImageFeatures
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -454,17 +454,13 @@ def batch_norm(X, eps=0.001):
     return X.to(device)
 
 
-#MantraNet (equivalent from the one coded in tensorflow at https://github.com/ISICV/ManTraNet)
-class MantraNet(nn.Module):
-    def __init__(self, in_channel=3, eps=10 ** (-6),device=device):
-        super(MantraNet, self).__init__()
+class IMTFE(nn.Module):
+    # ********** IMAGE MANIPULATION TRACE FEATURE EXTRACTOR *********
+    def __init__(self, in_channel=3,device=device):
+        super(IMTFE, self).__init__()
 
-        self.eps = eps
         self.relu = nn.ReLU()
         self.device=device
-
-
-        # ********** IMAGE MANIPULATION TRACE FEATURE EXTRACTOR *********
 
         ## Initialisation
 
@@ -478,7 +474,7 @@ class MantraNet(nn.Module):
         self.bayar_final[2, 2] = -1
 
         self.SRMConv2D = nn.Conv2d(in_channel, 9, 5, 1, padding=0, bias=False)
-        self.SRMConv2D.weight.data=torch.load('MantraNetv4.pt')['SRMConv2D.weight']
+        self.SRMConv2D.weight.data=torch.load('IMTFEv4.pt')['SRMConv2D.weight']
 
         ##SRM filters (fixed)
         for param in self.SRMConv2D.parameters():
@@ -510,35 +506,9 @@ class MantraNet(nn.Module):
             nn.Conv2d(256, 256, 3, 1, padding=0)]
         )
 
-        # ********** LOCAL ANOMALY DETECTOR *********
-
-        self.adaptation = nn.Conv2d(256, 64, 1, 1, padding=0, bias=False)
-
-        self.sigma_F = nn.Parameter(torch.zeros((1, 64, 1, 1)), requires_grad=True)
-
-        self.pool31 = nn.AvgPool2d(31, stride=1, padding=15, count_include_pad=False)
-        self.pool15 = nn.AvgPool2d(15, stride=1, padding=7, count_include_pad=False)
-        self.pool7 = nn.AvgPool2d(7, stride=1, padding=3, count_include_pad=False)
-
-        self.convlstm = ConvLSTM(input_dim=64,
-                                 hidden_dim=8,
-                                 kernel_size=(7, 7),
-                                 num_layers=1,
-                                 batch_first=False,
-                                 bias=True,
-                                 return_all_layers=False)
-
-        self.end = nn.Sequential(nn.Conv2d(8, 1, 7, 1, padding=3),nn.Sigmoid())
-        
-    def forward(self, x):
-        B, nb_channel, H, W = x.shape
-        
-        if not(self.training):
-            self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
-        else:
-            if not hasattr(self, 'GlobalPool'):
-                self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
-
+    def forward(self,x):
+        _,_,H,W = x.shape
+    
         # Normalization
         x = x / 255. * 2 - 1
 
@@ -571,91 +541,19 @@ class MantraNet(nn.Module):
 
         #L2 normalization
         last_block = F.normalize(last_block, dim=1, p=2)
-        
 
-        ## Local Anomaly Feature Extraction
-        X_adapt = self.adaptation(last_block)
-        X_adapt = batch_norm(X_adapt)
+        return last_block
 
-        # Z-pool concatenation
-        mu_T = self.GlobalPool(X_adapt)
-        sigma_T = torch.sqrt(self.GlobalPool(torch.square(X_adapt - mu_T)))
-        sigma_T = torch.max(sigma_T, self.sigma_F + self.eps)
-        inv_sigma_T = torch.pow(sigma_T, -1)
-        zpoolglobal = torch.abs((mu_T - X_adapt) * inv_sigma_T)
 
-        mu_31 = self.pool31(X_adapt)
-        zpool31 = torch.abs((mu_31 - X_adapt) * inv_sigma_T)
-
-        mu_15 = self.pool15(X_adapt)
-        zpool15 = torch.abs((mu_15 - X_adapt) * inv_sigma_T)
-
-        mu_7 = self.pool7(X_adapt)
-        zpool7 = torch.abs((mu_7 - X_adapt) * inv_sigma_T)
-
-        input_lstm = torch.cat([zpool7.unsqueeze(0), zpool15.unsqueeze(0), zpool31.unsqueeze(0), zpoolglobal.unsqueeze(0)], axis=0)
-
-        # Conv2DLSTM
-        _, output_lstm = self.convlstm(input_lstm)
-        output_lstm = output_lstm[0][0]
-
-        final_output = self.end(output_lstm)
-        
-
-        return final_output
-            
-
-#Slight modification of the original MantraNet using a GRU instead of a LSTM
-class MantraNet_GRU(nn.Module):
-    def __init__(self,device,in_channel=3,eps=10 **(-4)):
-        super(MantraNet_GRU, self).__init__()
+class AnomalyDetector(nn.Module):
+    # ********** IMAGE MANIPULATION TRACE FEATURE EXTRACTOR *********
+    def __init__(self, eps=10 ** (-6),device=device,with_GRU=False):
+        super(AnomalyDetector, self).__init__()
 
         self.eps = eps
         self.relu = nn.ReLU()
         self.device=device
-
-        # ********** IMAGE MANIPULATION TRACE FEATURE EXTRACTOR *********
-
-        ## Initialisation
-
-        self.init_conv = nn.Conv2d(in_channel, 4, 5, 1, padding=0, bias=False)
-
-        self.BayarConv2D = nn.Conv2d(in_channel, 3, 5, 1, padding=0, bias=False)
-        
-        self.SRMConv2D = nn.Conv2d(in_channel, 9, 5, 1, padding=0, bias=False)
-       
-        self.SRMConv2D.weight.data=torch.load('MantraNetv4.pt')['SRMConv2D.weight']
-
-        ##SRM filters (fixed)
-        for param in self.SRMConv2D.parameters():
-            param.requires_grad = False
-           
-
-        self.middle_and_last_block = nn.ModuleList([
-            nn.Conv2d(16, 32, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(64, 128, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(128, 128, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(128, 128, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(128, 256, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, 3, 1, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, 3, 1, padding=0)]
-        )
+        self.with_GRU=with_GRU
 
         # ********** LOCAL ANOMALY DETECTOR *********
 
@@ -667,7 +565,16 @@ class MantraNet_GRU(nn.Module):
         self.pool15 = nn.AvgPool2d(15, stride=1, padding=7, count_include_pad=False)
         self.pool7 = nn.AvgPool2d(7, stride=1, padding=3, count_include_pad=False)
 
-        self.convgru = ConvGRU(input_dim=64,
+        if not(self.with_GRU):
+            self.conv_lstm =ConvLSTM(input_dim=64,
+                                    hidden_dim=8,
+                                    kernel_size=(7, 7),
+                                    num_layers=1,
+                                    batch_first=False,
+                                    bias=True,
+                                    return_all_layers=False)
+        else:
+            self.conv_gru=ConvGRU(input_dim=64,
                                  hidden_dim=8,
                                  kernel_size=(7, 7),
                                  num_layers=1,
@@ -675,15 +582,12 @@ class MantraNet_GRU(nn.Module):
                                  bias=True,
                                  return_all_layers=False)
 
+
         self.end = nn.Sequential(nn.Conv2d(8, 1, 7, 1, padding=3),nn.Sigmoid())
         
-    
-        
-        self.bayar_mask = torch.ones((5, 5),device=self.device)
-        self.bayar_final = torch.zeros((5, 5),device=self.device)
-        
-    def forward(self, x):
-        B, nb_channel, H, W = x.shape
+
+    def forward(self,IMTFE_output):
+        _,_,H,W = IMTFE_output.shape
         
         if not(self.training):
             self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
@@ -691,45 +595,8 @@ class MantraNet_GRU(nn.Module):
             if not hasattr(self, 'GlobalPool'):
                 self.GlobalPool = nn.AvgPool2d((H, W), stride=1)
 
-        # Normalization
-        x = x / 255. * 2 - 1
-
-        ## Image Manipulation Trace Feature Extractor
-
-        ## **Bayar constraints**
-
-        self.bayar_mask[2, 2] = 0
-        self.bayar_final[2, 2] = -1
-
-        self.BayarConv2D.weight.data *= self.bayar_mask
-        self.BayarConv2D.weight.data *= torch.pow(self.BayarConv2D.weight.data.sum(axis=(2, 3)).view(3, 3, 1, 1), -1)
-        self.BayarConv2D.weight.data += self.bayar_final
-        
-        #Symmetric padding
-        X = symm_pad(x, (2, 2, 2, 2))
-
-        conv_init = self.init_conv(X)
-        conv_bayar = self.BayarConv2D(X)
-        conv_srm = self.SRMConv2D(X)
-
-        first_block = torch.cat([conv_init, conv_srm, conv_bayar], axis=1)
-        first_block = self.relu(first_block)
-
-        last_block = first_block
-
-        for layer in self.middle_and_last_block:
-
-            if isinstance(layer, nn.Conv2d):
-                last_block = symm_pad(last_block, (1, 1, 1, 1))
-
-            last_block = layer(last_block)
-
-        #L2 normalization
-        last_block = F.normalize(last_block, dim=1, p=2)
-        
-      
         ## Local Anomaly Feature Extraction
-        X_adapt = self.adaptation(last_block)
+        X_adapt = self.adaptation(IMTFE_output)
         X_adapt = batch_norm(X_adapt)
 
         # Z-pool concatenation
@@ -748,16 +615,43 @@ class MantraNet_GRU(nn.Module):
         mu_7 = self.pool7(X_adapt)
         zpool7 = torch.abs((mu_7 - X_adapt) * inv_sigma_T)
 
-        input_gru = torch.cat([zpool7.unsqueeze(0), zpool15.unsqueeze(0), zpool31.unsqueeze(0), zpoolglobal.unsqueeze(0)], axis=0)
+        input_rnn = torch.cat([zpool7.unsqueeze(0), zpool15.unsqueeze(0), zpool31.unsqueeze(0), zpoolglobal.unsqueeze(0)], axis=0)
 
-        # Conv2DLSTM
-        _,output_gru = self.convgru(input_gru)
-        output_gru = output_gru[0]
+        if not(self.with_GRU):
+            # Conv2DLSTM
+            _, output_lstm = self.conv_lstm(input_rnn)
+            output_lstm = output_lstm[0][0]
 
-        final_output = self.end(output_gru)
+            final_output = self.end(output_lstm)
+
+        else:
+            # Conv2DLSTM
+            _,output_gru = self.conv_gru(input_rnn)
+            output_gru = output_gru[0]
+
+            final_output = self.end(output_gru)
+
 
         return final_output
 
+
+#MantraNet (equivalent from the one coded in tensorflow at https://github.com/ISICV/ManTraNet)
+class MantraNet(nn.Module):
+    def __init__(self, in_channel=3, eps=10 ** (-6),device=device,with_GRU=False):
+        super(MantraNet, self).__init__()
+
+        self.eps = eps
+        self.relu = nn.ReLU()
+        self.device=device
+
+
+        self.IMTFE=IMTFE(in_channel=in_channel,device=device)
+        self.AnomalyDetector=AnomalyDetector(eps=eps,device=device,with_GRU=with_GRU)
+        
+    def forward(self, x):
+        
+        return self.AnomalyDetector(self.IMTFE(x))
+            
 
 ##Use pre-trained weights :
 def pre_trained_model(weight_path='./MantraNetv4.pt',device=device):
@@ -794,57 +688,3 @@ def check_forgery(model,img_path='./example.jpg',device=device):
     plt.subplot(1,3,3)
     plt.imshow((final_output[0][0].cpu().detach().unsqueeze(2)>0.2)*torch.tensor(original_image))
     plt.title('Suspicious regions detected')
-
-class ForgeryDetector(pl.LightningModule):
-    
-    # Model Initialization/Creation    
-    def __init__(self,train_loader,detector=MantraNet(),lr=0.001):
-        super(ForgeryDetector, self).__init__()
-        
-        self.detector=detector
-        self.train_loader=train_loader
-        self.cpt=-1
-        self.lr=lr
-        
-    # Forward Pass of Model
-    def forward(self, x):
-        return self.detector(x)
-    
-    # Loss Function
-    def loss(self, y_hat, y):
-        return nn.BCELoss()(y_hat,y)
-
-    # Optimizers
-    def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.detector.parameters(), lr=self.lr)
-        # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
-
-        # return the list of optimizers and second empty list is for schedulers (if any)
-        return [optimizer], []
-
-    # Calls after prepare_data for DataLoader
-    def train_dataloader(self):
-
-        return self.train_loader
-
-    
-    # Training Loop
-    def training_step(self, batch, batch_idx):
-        # batch returns x and y tensors
-        real_images, mask = batch
-        B,_,_,_=real_images.size()
-        self.cpt+=1
-
-        predicted=self.detector(real_images).view(B,-1)
-        mask=mask.view(B,-1)
-  
-        loss=self.loss(predicted,mask)
-
-        self.log('BCELoss',loss,on_step=True,on_epoch=True,prog_bar=True)
-
-
-        output = OrderedDict({
-                'loss': loss,
-                 })
-           
-        return output

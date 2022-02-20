@@ -38,16 +38,17 @@ Technically speaking, ManTraNet is composed of two sub-networks as shown below:
 
 ## Where are the pre-trained weights coming from  ?
 
-- The authors have first pretrained the Image Manipulation Trace Feature Extractor with an homemade database containing 385 types of forgeries. Unfortunately, their database is not shared publicly. Then, they trained the ManTraNet with four types of synthetic data, i.e. copy-move, splicing, removal, and enhancement.
+- The authors have first pretrained the Image Manipulation Trace Feature Extractor with an homemade database containing 385 types of forgeries. Unfortunately, their database is not shared publicly. Then, they trained the Anomaly Detector with four types of synthetic data, i.e. copy-move, splicing, removal, and enhancement.
+
+Mantranet results from the composition of these two networks
 
 **_The pre-trained weights available in this repo are the results of these two trainings achieved by the authors_**
 
-**Remarks** : I provide also a way to train ManTraNet in the demo notebook. Of course, to do it you need your own (relevant) dataset and, certainly play with some hyperparameters like the learning rate (see the details of the `ForgeryDetector` class in `mantranet.py` ).
+**Remarks** : To train ManTraNet you need your own (relevant) datasets.
 
 
 ## Dependency
-- **Pytorch** : 1.8.1
-- **Pytorch-lightning : 1.2.10**
+- **Pytorch** >= 1.8.1
 
 ## Demo
 One may simply download the repo and play with the provided ipython notebook.
