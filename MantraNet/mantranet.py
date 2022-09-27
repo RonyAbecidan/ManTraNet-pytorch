@@ -418,12 +418,13 @@ class ConvGRU(nn.Module):
 def reflect(x, minx, maxx):
     """ Reflects an array around two points making a triangular waveform that ramps up
     and down,  allowing for pad lengths greater than the input length """
+    x_numpy=x.cpu().detach().numpy()
     rng = maxx - minx
     double_rng = 2 * rng
-    mod = np.fmod(x - minx, double_rng)
+    mod = np.fmod(x_numpy - minx, double_rng)
     normed_mod = np.where(mod < 0, mod + double_rng, mod)
     out = np.where(normed_mod >= rng, double_rng - normed_mod, normed_mod) + minx
-    return np.array(out, dtype=x.dtype)
+    return torch.tensor(out, dtype=x.dtype)
 
 def symm_pad(im, padding):
     h, w = im.shape[-2:]
