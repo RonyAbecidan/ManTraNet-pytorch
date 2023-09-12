@@ -1,4 +1,4 @@
-[![Generic badge](https://img.shields.io/badge/Library-Pytorch-<>.svg)](https://shields.io/) [![Ask Me Anything !](https://img.shields.io/badge/Official%20-No-1abc9c.svg)](https://GitHub.com/Naereen/ama) ![visitors](https://visitor-badge.glitch.me/badge?page_id=RonyAbecidan.ManTraNet-pytorch)
+[![Generic badge](https://img.shields.io/badge/Library-Pytorch-<>.svg)](https://shields.io/) [![Ask Me Anything !](https://img.shields.io/badge/Official%20-No-1abc9c.svg)](https://GitHub.com/Naereen/ama) ![visitors](https://visitor-badge.laobi.icu/badge?page_id=RonyAbecidan.ManTraNet-pytorch)
 
 Who has never met a forged picture on the web ? No one ! Everyday we are constantly facing fake pictures touched up in Photoshop but it is not always easy to detect it.
 
