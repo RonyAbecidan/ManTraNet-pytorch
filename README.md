@@ -7,6 +7,7 @@ With this algorithm, you may find if an image has been falsified and even identi
 
 ![](https://i.imgur.com/OyErscI.png)
 
+
 It's a faifthful replica of the [official implementation](https://github.com/ISICV/ManTraNet) using however the library Pytorch. To learn more about this network, I suggest you to read the paper that describes it [here](https://openaccess.thecvf.com/content_CVPR_2019/papers/Wu_ManTra-Net_Manipulation_Tracing_Network_for_Detection_and_Localization_of_Image_CVPR_2019_paper.pdf).
 
 On top of the MantraNet, there is also a file containing pre-trained weights obtained by the authors which is compatible with this pytorch version.
@@ -17,7 +18,7 @@ There is a slight discrepancy between the architecture depicted in the paper com
 
 Please note that the rest of the README is largely inspired by the original repo.
 
-
+N.B : You can also be interested by ![this model](https://github.com/RonyAbecidan/noiseprint-pytorch) for your forensics model !
 
 --- 
 ## What is ManTraNet ?
