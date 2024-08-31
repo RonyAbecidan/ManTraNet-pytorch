@@ -1,6 +1,6 @@
 [![Generic badge](https://img.shields.io/badge/Library-Pytorch-<>.svg)](https://shields.io/) [![Ask Me Anything !](https://img.shields.io/badge/Official%20-No-1abc9c.svg)](https://GitHub.com/Naereen/ama) ![visitors](https://visitor-badge.laobi.icu/badge?page_id=RonyAbecidan.ManTraNet-pytorch)
 
-Who has never met a forged picture on the web ? No one ! Everyday we are constantly facing fake pictures touched up in Photoshop but it is not always easy to detect it.
+Who has never met a forged picture on the web ? No one ! Everyday we are constantly facing tampered pictures but it is not always easy to detect it.
 
 In this repo, you will find an implementation of ManTraNet, a manipulation tracing network for detection and localization of image forgeries with anomalous features. 
 With this algorithm, you may find if an image has been falsified and even identify suspicious regions. A little example is displayed below.
